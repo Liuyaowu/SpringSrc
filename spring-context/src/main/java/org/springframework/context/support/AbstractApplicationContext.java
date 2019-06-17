@@ -505,6 +505,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				postProcessBeanFactory(beanFactory);
 
 				// Invoke factory processors registered as beans in the context:在context中调用注册为bean的FactoryProcessor
+				//在Spring的环境中去执行已经被注册的FactoryProcessor
 				//执行自定义的ProcessBeanFactory
 				invokeBeanFactoryPostProcessors(beanFactory);
 
@@ -635,7 +636,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		// Configure the bean factory with context callbacks.
 		//添加一个后置处理器:能够在实现了该接口的bean中得到各种*Aware对象(各个*Aware都有不同的作用)
 		beanFactory.addBeanPostProcessor(new ApplicationContextAwareProcessor(this));
-
+		//如果注册了ApplicationContextAwareProcessor,则下面的Aware如果在类中声明是不会自动注入的
 		beanFactory.ignoreDependencyInterface(EnvironmentAware.class);
 		beanFactory.ignoreDependencyInterface(EmbeddedValueResolverAware.class);
 		beanFactory.ignoreDependencyInterface(ResourceLoaderAware.class);

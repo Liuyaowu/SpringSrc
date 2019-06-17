@@ -1,8 +1,6 @@
 package com.mobei.test;
 
 import com.mobei.aop.AppConfig;
-import com.mobei.dao.ImportSelectorDao;
-import com.mobei.dao.IndexDao;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 public class TestCase {
@@ -23,11 +21,11 @@ public static void main(String[] args) {
 
 //	AnnotationConfigApplicationContext ac =
 //			new AnnotationConfigApplicationContext(AppConfig.class);
-	IndexDao dao = ac.getBean(IndexDao.class);
-dao.query();
-
-	ImportSelectorDao importDao = 	ac.getBean(ImportSelectorDao.class);
-	System.out.println(importDao);
+//	IndexDao dao = ac.getBean(IndexDao.class);
+//dao.query();
+//
+//	ImportSelectorDao importDao = 	ac.getBean(ImportSelectorDao.class);
+//	System.out.println(importDao);
 	//	IndexDao dao1 = ac.getBean(IndexDao.class);
 
 //	dao.query();
