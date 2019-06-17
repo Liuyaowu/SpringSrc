@@ -174,6 +174,8 @@ public abstract class AnnotationConfigUtils {
 		}
 
 		if (!registry.containsBeanDefinition(AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME)) {
+			//AutowiredAnnotationBeanPostProcessor实现了MergedBeanDefinitionPostProcessor
+			//而MergedBeanDefinitionPostProcessor最终实现了BeanPostProcessor
 			RootBeanDefinition def = new RootBeanDefinition(AutowiredAnnotationBeanPostProcessor.class);
 			def.setSource(source);
 			beanDefs.add(registerPostProcessor(registry, def, AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME));

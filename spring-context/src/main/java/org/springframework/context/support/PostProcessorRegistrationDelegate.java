@@ -91,7 +91,7 @@ final class PostProcessorRegistrationDelegate {
 					processedBeans.add(ppName);
 				}
 			}
-			//排序不重要,而且currentRegistryProcessors中只有一个数据
+			//排序(实现了PriorityOrdered的类需要排序)不重要,而且currentRegistryProcessors中只有一个数据
 			sortPostProcessors(currentRegistryProcessors, beanFactory);
 			//合并list,不重要(为什么要合并:因为还有自己的)
 			registryProcessors.addAll(currentRegistryProcessors);
