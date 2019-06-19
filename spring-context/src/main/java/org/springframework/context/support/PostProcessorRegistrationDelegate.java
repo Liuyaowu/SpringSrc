@@ -42,18 +42,30 @@ final class PostProcessorRegistrationDelegate {
 	}
 
 
+	/**
+	 * 执行注册的BeanFactoryPostProcessors
+	 * @param beanFactory:DefaultListableBeanFactory
+	 * @param beanFactoryPostProcessors:AbstractApplicationContext中的beanFactoryPostProcessors(存储BeanFactoryPostProcessor的List集合)
+	 */
 	public static void invokeBeanFactoryPostProcessors(
 			ConfigurableListableBeanFactory beanFactory, List<BeanFactoryPostProcessor> beanFactoryPostProcessors) {
 
 		// Invoke BeanDefinitionRegistryPostProcessors first, if any.
+		//如果有BeanDefinitionRegistryPostProcessors则需要先处理,那么我们需要拿到bean工厂的beanDefinitionMap,
+		//循环去查找是否有类型相匹配的类,如果找到了存储到这个set中
 		Set<String> processedBeans = new HashSet<>();
 
 		if (beanFactory instanceof BeanDefinitionRegistry) {//必定成立:beanFactory实现了BeanDefinitionRegistry接口
 			BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
+			//这里工厂后置处理器(BeanDefinitionRegistry)有很多的子类,不同的类有不同的功能,需要分开来处理
+
+
 			List<BeanFactoryPostProcessor> regularPostProcessors = new ArrayList<>();
+
+			//BeanDefinitionRegistryPostProcessor继承自BeanDefinitionRegistry
 			List<BeanDefinitionRegistryPostProcessor> registryProcessors = new ArrayList<>();
 
-			//自定义的beanFactoryPostProcessors
+			//自定义的beanFactoryPostProcessors,比方说这里我们定义的MyBeanFactoryPostProcessor
 			for (BeanFactoryPostProcessor postProcessor : beanFactoryPostProcessors) {
 				if (postProcessor instanceof BeanDefinitionRegistryPostProcessor) {
 					BeanDefinitionRegistryPostProcessor registryProcessor =
@@ -70,19 +82,23 @@ final class PostProcessorRegistrationDelegate {
 			// uninitialized to let the bean factory post-processors apply to them!
 			// Separate between BeanDefinitionRegistryPostProcessors that implement
 			// PriorityOrdered, Ordered, and the rest.
+			//BeanDefinitionRegistryPostProcessor继承自BeanFactoryPostProcessor
 			List<BeanDefinitionRegistryPostProcessor> currentRegistryProcessors = new ArrayList<>();
 
 			// First, invoke the BeanDefinitionRegistryPostProcessors that implement PriorityOrdered.
-			//从beanFactory的map中拿出属于BeanFactoryPostProcessor类型的类的字符串放到一个字符串数组中
+			//从beanFactory的beanDefinitionMap中拿出属于BeanFactoryPostProcessor类型的类的字符串放到一个字符串数组中
+			//执行refresh()的时候我们自定义的MyBeanFactoryPostProcessor不会有,因为此时还没开始扫描,容器中还没有MyBeanFactoryPostProcessor的beandefinition
+			//但是此时有一个名叫internalConfigurationAnnotationProcessor(ConfigurationClassPostProcessor:BeanFactoryPostProcessor)的bean工厂后置处理器
+			//这是在初始化AnnotationConfigApplicationContext的时候,创建reader,在reader的构造函数中spring默认注册的一个类
+			//黑盒,详细代码可以忽略
 			String[] postProcessorNames =
 					beanFactory.getBeanNamesForType(BeanDefinitionRegistryPostProcessor.class, true, false);
 			/**
-			 * 这个地方可以得到一个BeanFactoryPostProcessor,因为Spring默认是在最开始自己注册的.
+			 * 上面的分析可知这个地方可以得到一个BeanFactoryPostProcessor(ConfigurationClassPostProcessor)
 			 * 为什么要在最开始注册这个呢:
-			 * 		因为spring的工厂需要解析、扫描等等功能,而这些功能都是需要在spring工厂初始化完成之前执行,
-			 * 		必须在工厂最开始或工厂初始化之中,总之不能在初始化之后,因为那个时候已经不需要使用工厂了.
+			 * 		因为spring的工厂需要解析、扫描等等功能,这些功能都不是由beanfactory自己完成的(由ConfigurationClassPostProcessor处理),
+			 * 		这些功能都是需要在spring工厂初始化完成之前执行,必须在工厂最开始或工厂初始化之中,总之不能在初始化之后,因为那个时候已经不需要使用工厂了.
 			 * 		所以这里spring在一开始就注册了BeanFactoryPostProcessor用来插手springfactory实例化过程.
-			 * 		在这个地方断点可以知道这个类叫:ConfigurationClassPostProcessor(AnnotationConfigApplicationContext构造的时候spring创建并注册了该类)
 			 * 	ConfigurationClassPostProcessor:具体作用可以参考源码
 			 */
 			for (String ppName : postProcessorNames) {
@@ -97,6 +113,7 @@ final class PostProcessorRegistrationDelegate {
 			registryProcessors.addAll(currentRegistryProcessors);
 			//currentRegistryProcessors:ConfigurationClassPostProcessor
 			//registry:DefaultListableBeanFactory
+
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 			currentRegistryProcessors.clear();
 
@@ -275,7 +292,7 @@ final class PostProcessorRegistrationDelegate {
 	 */
 	private static void invokeBeanDefinitionRegistryPostProcessors(
 			Collection<? extends BeanDefinitionRegistryPostProcessor> postProcessors, BeanDefinitionRegistry registry) {
-
+		//第一次调用的时候其实就是将ConfigurationClassPostProcessor这个bean工厂后置处理器传递了过来(集合中只有这一个类)
 		for (BeanDefinitionRegistryPostProcessor postProcessor : postProcessors) {
 			postProcessor.postProcessBeanDefinitionRegistry(registry);
 		}

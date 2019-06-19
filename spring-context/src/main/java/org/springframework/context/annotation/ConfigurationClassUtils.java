@@ -86,23 +86,27 @@ abstract class ConfigurationClassUtils {
 		}
 
 		AnnotationMetadata metadata;
+		//由于带了注解的bean和没带注解的bean的元数据信息会有些不一样:比如RootBeanDefinition的元信息是没有注解信息的,
+		//所以取metedata的时候需要根据不同的bean类型去获取
 		/**
-		 * 如果BeanDefinition是AnnotateBeanDefinition的实例,并且className和BeanDefinition中的元数据
+		 * 如果BeanDefinition是AnnotateBeanDefinition的实例,并且className和BeanDefinition中的元数据的className相等
 		 * 则直接从BeanDefinition获得Metadata
 		 */
 		if (beanDef instanceof AnnotatedBeanDefinition &&
 				className.equals(((AnnotatedBeanDefinition) beanDef).getMetadata().getClassName())) {
 			// Can reuse the pre-parsed metadata from the given BeanDefinition...
-			metadata = ((AnnotatedBeanDefinition) beanDef).getMetadata();
+			metadata = ((AnnotatedBeanDefinition) beanDef).getMetadata();//对于注解bean,元数据中最关心的就是注解
 		}
 		/**
-		 * 如果BeanDefinition是AbstractBeanDefinition的实例并且beanDef有beanClass属性存在
-		 * 则实例化StandardAnnotationMetadata
+		 * 如果BeanDefinition是AbstractBeanDefinition的实例(注意RootBeanDefinition是AbstractBeanDefinition的子类)
+		 * 并且beanDef有beanClass属性存在
+		 * 则实例化StandardAnnotationMetadata,即如果不是注解的bean则配置一个标准的元信息
 		 */
 		else if (beanDef instanceof AbstractBeanDefinition && ((AbstractBeanDefinition) beanDef).hasBeanClass()) {
 			// Check already loaded Class if present...
 			// since we possibly can't even load the class file for this Class.
 			Class<?> beanClass = ((AbstractBeanDefinition) beanDef).getBeanClass();
+			//如果是RootBeanDefinition几乎没有元数据,可以忽略
 			metadata = new StandardAnnotationMetadata(beanClass, true);
 		}
 		else {

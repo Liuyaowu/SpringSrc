@@ -233,6 +233,9 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	}
 
 	/**
+	 * MutablePropertyValues:描述的是xml中bean标签的属性:<bean><property ref="xxx></><bean/>
+	 *
+	 *
 	 * Return the property values to be applied to a new instance of the bean.
 	 * <p>The returned instance can be modified during bean factory post-processing.
 	 * @return the MutablePropertyValues object (never {@code null})

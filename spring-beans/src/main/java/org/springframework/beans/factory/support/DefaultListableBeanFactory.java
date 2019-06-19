@@ -436,7 +436,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 	@Override
 	public String[] getBeanNamesForType(@Nullable Class<?> type, boolean includeNonSingletons, boolean allowEagerInit) {
-		if (!isConfigurationFrozen() || type == null || !allowEagerInit) {
+		if (!isConfigurationFrozen() || type == null || !allowEagerInit) {//黑盒代码,可以忽略
 			return doGetBeanNamesForType(ResolvableType.forRawClass(type), includeNonSingletons, allowEagerInit);
 		}
 		Map<Class<?>, String[]> cache =
@@ -657,7 +657,6 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 				throw new IllegalArgumentException("Value [" + autowiredValue +
 						"] does not implement specified dependency type [" + dependencyType.getName() + "]");
 			}
-			this.resolvableDependencies.put(dependencyType, autowiredValue);
 		}
 	}
 

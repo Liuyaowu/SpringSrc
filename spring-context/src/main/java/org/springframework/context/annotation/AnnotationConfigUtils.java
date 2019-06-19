@@ -153,7 +153,7 @@ public abstract class AnnotationConfigUtils {
 		if (beanFactory != null) {
 			//这里可以看到实例的很多功能并不是beanFactory直接处理的,而是由对应功能的类去完成,很好的降低了耦合性,如果不需要某个功能直接不设置该类即可
 			if (!(beanFactory.getDependencyComparator() instanceof AnnotationAwareOrderComparator)) {
-				//AnnotationAwareOrderComparator:主要能解析@Order注解和@Priority注解
+				//AnnotationAwareOrderComparator:处理排序的类,主要能解析@Order注解和@Priority注解
 				beanFactory.setDependencyComparator(AnnotationAwareOrderComparator.INSTANCE);
 			}
 			if (!(beanFactory.getAutowireCandidateResolver() instanceof ContextAnnotationAutowireCandidateResolver)) {
@@ -163,10 +163,12 @@ public abstract class AnnotationConfigUtils {
 		}
 
 		Set<BeanDefinitionHolder> beanDefs = new LinkedHashSet<>(8);
+		//以下代码spring添加了一些辅助beanfactory实例化对象的一些类
+
 		//BeanDefinition的注册,重要,需要理解注册每个bean的类型
 		if (!registry.containsBeanDefinition(CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			//需要注意的是ConfigurationClassPostProcessor的类型是BeanDefinitionRegistryPostProcessor
-			//二BeanDefinitionRegistryPostProcessor最终实现了BeanFactoryPostProcessor接口
+			//而BeanDefinitionRegistryPostProcessor最终实现了BeanFactoryPostProcessor接口
 			//RootBeanDefinition:描述没加注解的bean类信息(spring内部创建的类)
 			RootBeanDefinition def = new RootBeanDefinition(ConfigurationClassPostProcessor.class);
 			def.setSource(source);
