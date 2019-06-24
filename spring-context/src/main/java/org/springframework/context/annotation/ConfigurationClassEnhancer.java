@@ -16,15 +16,8 @@
 
 package org.springframework.context.annotation;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Proxy;
-import java.util.Arrays;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.aop.scope.ScopedProxyFactoryBean;
 import org.springframework.asm.Type;
 import org.springframework.beans.factory.BeanFactory;
@@ -38,13 +31,7 @@ import org.springframework.cglib.core.ClassGenerator;
 import org.springframework.cglib.core.Constants;
 import org.springframework.cglib.core.DefaultGeneratorStrategy;
 import org.springframework.cglib.core.SpringNamingPolicy;
-import org.springframework.cglib.proxy.Callback;
-import org.springframework.cglib.proxy.CallbackFilter;
-import org.springframework.cglib.proxy.Enhancer;
-import org.springframework.cglib.proxy.Factory;
-import org.springframework.cglib.proxy.MethodInterceptor;
-import org.springframework.cglib.proxy.MethodProxy;
-import org.springframework.cglib.proxy.NoOp;
+import org.springframework.cglib.proxy.*;
 import org.springframework.cglib.transform.ClassEmitterTransformer;
 import org.springframework.cglib.transform.TransformingClassGenerator;
 import org.springframework.lang.Nullable;
@@ -54,6 +41,12 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
+import java.util.Arrays;
 
 /**
  * Enhances {@link Configuration} classes by generating a CGLIB subclass which
@@ -74,7 +67,9 @@ class ConfigurationClassEnhancer {
 
 	// The callbacks to use. Note that these callbacks must be stateless.
 	private static final Callback[] CALLBACKS = new Callback[] {
+			//增强方法,主要控制bean的作用域:防止每次都去new
 			new BeanMethodInterceptor(),
+			//设置一个beanfactory
 			new BeanFactoryAwareMethodInterceptor(),
 			NoOp.INSTANCE
 	};
@@ -95,6 +90,7 @@ class ConfigurationClassEnhancer {
 	 * @return the enhanced subclass
 	 */
 	public Class<?> enhance(Class<?> configClass, @Nullable ClassLoader classLoader) {
+		//判断是否被代理过
 		if (EnhancedConfiguration.class.isAssignableFrom(configClass)) {
 			if (logger.isDebugEnabled()) {
 				logger.debug(String.format("Ignoring request to enhance %s as it has " +
@@ -106,6 +102,7 @@ class ConfigurationClassEnhancer {
 			}
 			return configClass;
 		}
+		//如果没有被代理cglib代理
 		Class<?> enhancedClass = createClass(newEnhancer(configClass, classLoader));
 		if (logger.isTraceEnabled()) {
 			logger.trace(String.format("Successfully enhanced %s; enhanced class name is: %s",
@@ -119,10 +116,20 @@ class ConfigurationClassEnhancer {
 	 */
 	private Enhancer newEnhancer(Class<?> configSuperClass, @Nullable ClassLoader classLoader) {
 		Enhancer enhancer = new Enhancer();
+		//增强父类(cglib基于继承)
 		enhancer.setSuperclass(configSuperClass);
+		//增强接口:便于判断,表示一个类已经被增强了
 		enhancer.setInterfaces(new Class<?>[] {EnhancedConfiguration.class});
 		enhancer.setUseFactory(false);
 		enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);
+		/**
+		 * BeanFactoryAwareGeneratorStrategy是一个生成策略,
+		 * 主要是为生成的CGLIB类中添加成员变量$$beanFactory,
+		 * 同时基于接口EnhancedConfiguration的父接口BeanFactoryAware中的setBeanFactory方法,
+		 * 设置此变量的值为当前Context中的beanfactory,这样我们这个cglib代理的对象就有了beanfactory,
+		 * 有了factory就能获得对象,而不用去通过方法获得对象了,因为通过方法获得对象不能控制其过程
+		 * 该beanFactory的作用是在this调用时拦截该方法并通过factory获取目标对象
+		 */
 		enhancer.setStrategy(new BeanFactoryAwareGeneratorStrategy(classLoader));
 		enhancer.setCallbackFilter(CALLBACK_FILTER);
 		enhancer.setCallbackTypes(CALLBACK_FILTER.getCallbackTypes());
@@ -315,7 +322,8 @@ class ConfigurationClassEnhancer {
 		@Nullable
 		public Object intercept(Object enhancedConfigInstance, Method beanMethod, Object[] beanMethodArgs,
 					MethodProxy cglibMethodProxy) throws Throwable {
-
+			//enhancedConfigInstance 代理
+			//通过enhancedConfigInstance中cglib生成的成员变量$$beanFactory获得beanFactory
 			ConfigurableBeanFactory beanFactory = getBeanFactory(enhancedConfigInstance);
 			String beanName = BeanAnnotationHelper.determineBeanNameFor(beanMethod);
 
@@ -346,6 +354,7 @@ class ConfigurationClassEnhancer {
 				}
 			}
 
+			//判断执行的方法和调用方法是不是同一个
 			if (isCurrentlyInvokedFactoryMethod(beanMethod)) {
 				// The factory is calling the bean method in order to instantiate and register the bean
 				// (i.e. via a getBean() call) -> invoke the super implementation of the method to actually

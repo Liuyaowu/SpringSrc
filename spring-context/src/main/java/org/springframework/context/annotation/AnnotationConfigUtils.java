@@ -139,6 +139,7 @@ public abstract class AnnotationConfigUtils {
 	}
 
 	/**
+	 * 将所有相关的注解后置处理器注册到容器中(即spring在这里默认添加了一些后置处理器)
 	 * Register all relevant annotation post processors in the given registry.
 	 * @param registry the registry to operate on
 	 * @param source the configuration source element (already extracted)
@@ -163,8 +164,9 @@ public abstract class AnnotationConfigUtils {
 		}
 
 		Set<BeanDefinitionHolder> beanDefs = new LinkedHashSet<>(8);
-		//以下代码spring添加了一些辅助beanfactory实例化对象的一些类
+		//以下代码spring添加了一些辅助beanfactory实例化对象的一些类的beandefinition
 
+		//这一个是BeanFactoryPostProcessor类型的
 		//BeanDefinition的注册,重要,需要理解注册每个bean的类型
 		if (!registry.containsBeanDefinition(CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			//需要注意的是ConfigurationClassPostProcessor的类型是BeanDefinitionRegistryPostProcessor
@@ -175,6 +177,7 @@ public abstract class AnnotationConfigUtils {
 			beanDefs.add(registerPostProcessor(registry, def, CONFIGURATION_ANNOTATION_PROCESSOR_BEAN_NAME));
 		}
 
+		//剩下的都是BeanPostProcessor类型的
 		if (!registry.containsBeanDefinition(AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME)) {
 			//AutowiredAnnotationBeanPostProcessor实现了MergedBeanDefinitionPostProcessor
 			//而MergedBeanDefinitionPostProcessor最终实现了BeanPostProcessor

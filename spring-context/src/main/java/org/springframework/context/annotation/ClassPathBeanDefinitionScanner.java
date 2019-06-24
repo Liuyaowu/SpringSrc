@@ -16,17 +16,10 @@
 
 package org.springframework.context.annotation;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
-import org.springframework.beans.factory.support.AbstractBeanDefinition;
-import org.springframework.beans.factory.support.BeanDefinitionDefaults;
-import org.springframework.beans.factory.support.BeanDefinitionReaderUtils;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.BeanNameGenerator;
+import org.springframework.beans.factory.support.*;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.EnvironmentCapable;
 import org.springframework.core.env.StandardEnvironment;
@@ -34,6 +27,9 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.PatternMatchUtils;
+
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * A bean definition scanner that detects bean candidates on the classpath,
@@ -261,6 +257,9 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 	}
 
 	/**
+	 * 解析扫描的一些基本信息:比如是否过滤、是否加入新的包
+	 * 扫描完后将加了@Component、@Configuration等相关注解的类的bean注册到容器中:
+	 * 		将beandefinition添加到工厂的beanDefinitionMap中
 	 * Perform a scan within the specified base packages,
 	 * returning the registered bean definitions.
 	 * <p>This method does <i>not</i> register an annotation config processor
@@ -271,23 +270,35 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 	protected Set<BeanDefinitionHolder> doScan(String... basePackages) {
 		Assert.notEmpty(basePackages, "At least one base package must be specified");
 		Set<BeanDefinitionHolder> beanDefinitions = new LinkedHashSet<>();
+		//扫描basePackage路径下的java文件并将其转成BeanDefinition
 		for (String basePackage : basePackages) {
 			Set<BeanDefinition> candidates = findCandidateComponents(basePackage);
-			for (BeanDefinition candidate : candidates) {
+			for (BeanDefinition candidate : candidates) {//将类的一些初始信息添加到beandefinition中
+				//解析scope属性
 				ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(candidate);
 				candidate.setScope(scopeMetadata.getScopeName());
 				String beanName = this.beanNameGenerator.generateBeanName(candidate, this.registry);
-				if (candidate instanceof AbstractBeanDefinition) {
+				//前面解析@ComponentScan注解中默认属性时由于还没有获取到类路径下的类并转换成beandefinition,默认值保存在一个全局域中,
+				//到了这里就得到了beandefinition,我们可以将初始值设置给beandefinition了(全局设置的默认初始值先赋值一遍)
+				if (candidate instanceof AbstractBeanDefinition) {//ScannedGenericBeanDefinition实现了AbstractBeanDefinition接口
 					postProcessBeanDefinition((AbstractBeanDefinition) candidate, beanName);
 				}
+				/**
+				 * 检查并处理这些被扫描到的类的常用注解:
+				 * 这里的处理主要是指把常用的注解的值设置到AnnotatedBeanDefinition中,
+				 * 前提是这个类必须是AnnotatedBeanDefinition类型的,说白了就是加了注解的类
+				 * 比方说我们在@ComponentScan注解中设置的lazyinit为false(这一步在上面做完了),
+				 * 但是某个加了注解的类又设置了自己的@Lazy注解为true,这个时候就需要在这里修改一下前面设置到beandefinition中的这个值了
+				 */
 				if (candidate instanceof AnnotatedBeanDefinition) {
 					AnnotationConfigUtils.processCommonDefinitionAnnotations((AnnotatedBeanDefinition) candidate);
 				}
-				if (checkCandidate(beanName, candidate)) {
+				if (checkCandidate(beanName, candidate)) {//检查通过@Component扫描进来的bean是不是可能已经(比如通过register方法注册)在工厂中的beandefinitionmap中了
 					BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(candidate, beanName);
 					definitionHolder =
 							AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
 					beanDefinitions.add(definitionHolder);
+					//将这些bean注册到容器中:将beandefinition添加到工厂的beanDefinitionMap中
 					registerBeanDefinition(definitionHolder, this.registry);
 				}
 			}
@@ -321,6 +332,11 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 
 
 	/**
+	 * 检查给定的bean名称,判断是否需要注册或者与现有的beandefinition冲突了:
+	 * 		所谓冲突是指:可能会出现某个类添加了@Component注解,客户端手动调用applicationContext.register注册到容器
+	 * 		通过这种方式调用的很早就转换成了beandefinition保存到了工厂中,由于这个类添加了@Component相关的注解,会被@ComponentScan再一次扫描,
+	 * 		所以设置需要检测一下对应的beandefinition是否已经在工厂的集合中存在了
+	 *
 	 * Check the given candidate's bean name, determining whether the corresponding
 	 * bean definition needs to be registered or conflicts with an existing definition.
 	 * @param beanName the suggested name for the bean

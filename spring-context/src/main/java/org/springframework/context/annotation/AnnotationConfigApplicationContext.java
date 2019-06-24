@@ -69,7 +69,12 @@ public class AnnotationConfigApplicationContext extends GenericApplicationContex
 		//创建一个AnnotatedBeanDefinitionReader:读取被加了注解的bean
 		//什么是bean定义(BeanDefinition):
 		this.reader = new AnnotatedBeanDefinitionReader(this);
-		//创建一个类路径下bean的扫描器
+		/**
+		 * 创建一个类路径下bean的扫描器:可以扫描类并转换成beandefinition
+		 * 注意: 我们扫描包的工作并不是这个scanner完成的,扫描包的工作是spring创建的ClassPathBeanDefinitionScanner这个类的对象完成的,
+		 * 		 这个scanner创建在这的目的是方便开发者在外部调用AnnotationConfigApplicationContext对象的scanner方法
+		 * 		 某种程度上来说,这里创建的这个对象没什么作用
+		 */
 		this.scanner = new ClassPathBeanDefinitionScanner(this);
 	}
 

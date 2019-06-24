@@ -16,17 +16,8 @@
 
 package org.springframework.context.annotation;
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.beans.factory.BeanDefinitionStoreException;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.annotation.AnnotatedGenericBeanDefinition;
@@ -35,13 +26,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.groovy.GroovyBeanDefinitionReader;
 import org.springframework.beans.factory.parsing.SourceExtractor;
-import org.springframework.beans.factory.support.AbstractBeanDefinition;
-import org.springframework.beans.factory.support.AbstractBeanDefinitionReader;
-import org.springframework.beans.factory.support.BeanDefinitionReader;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.BeanNameGenerator;
-import org.springframework.beans.factory.support.DefaultListableBeanFactory;
-import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.beans.factory.support.*;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.context.annotation.ConfigurationCondition.ConfigurationPhase;
 import org.springframework.core.annotation.AnnotationAttributes;
@@ -52,6 +37,9 @@ import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.core.type.MethodMetadata;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
+
+import java.lang.reflect.Method;
+import java.util.*;
 
 /**
  * Reads a given fully-populated set of ConfigurationClass instances, registering bean
@@ -134,6 +122,8 @@ class ConfigurationClassBeanDefinitionReader {
 			return;
 		}
 
+		//如果一个类是被import的,会被spring标注
+		//在这里完成注册
 		if (configClass.isImported()) {
 			registerBeanDefinitionForImportedConfigurationClass(configClass);
 		}
@@ -141,7 +131,9 @@ class ConfigurationClassBeanDefinitionReader {
 			loadBeanDefinitionsForBeanMethod(beanMethod);
 		}
 
+		//xml
 		loadBeanDefinitionsFromImportedResources(configClass.getImportedResources());
+		//注册registrar
 		loadBeanDefinitionsFromRegistrars(configClass.getImportBeanDefinitionRegistrars());
 	}
 
@@ -359,6 +351,7 @@ class ConfigurationClassBeanDefinitionReader {
 		});
 	}
 
+	//把扫描出来的bean对应的BeanDefinitions添加到factory的beanDefinitionMap中
 	private void loadBeanDefinitionsFromRegistrars(Map<ImportBeanDefinitionRegistrar, AnnotationMetadata> registrars) {
 		registrars.forEach((registrar, metadata) ->
 				registrar.registerBeanDefinitions(metadata, this.registry));
@@ -432,8 +425,8 @@ class ConfigurationClassBeanDefinitionReader {
 			if (skip == null) {
 				if (configClass.isImported()) {
 					boolean allSkipped = true;
-					for (ConfigurationClass importedBy : configClass.getImportedBy()) {
-						if (!shouldSkip(importedBy)) {
+					for (ConfigurationClass importedBy : configClass.getImportedBy()) {//拿到import这个类的类(谁将这个类import进来的)
+						if (!shouldSkip(importedBy)) {//递归判断类的类的类...是否也被其它类import了,如果是就跳过,只要源类是import进来的则被其import的类都要跳过
 							allSkipped = false;
 							break;
 						}

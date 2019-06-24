@@ -16,12 +16,6 @@
 
 package org.springframework.context.annotation;
 
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-
 import org.springframework.beans.factory.parsing.Location;
 import org.springframework.beans.factory.parsing.Problem;
 import org.springframework.beans.factory.parsing.ProblemReporter;
@@ -35,7 +29,10 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
+import java.util.*;
+
 /**
+ *
  * Represents a user-defined {@link Configuration @Configuration} class.
  * Includes a set of {@link Bean} methods, including all such methods
  * defined in the ancestry of the class, in a 'flattened-out' manner.
@@ -62,7 +59,7 @@ final class ConfigurationClass {
 
 	private final Map<String, Class<? extends BeanDefinitionReader>> importedResources =
 			new LinkedHashMap<>();
-
+	//保存自定义的实现了ImportBeanDefinitionRegistrar接口的类,key为实现了接口的类,value为导入该类的(config类)注解元数据:AnnotationMetadata
 	private final Map<ImportBeanDefinitionRegistrar, AnnotationMetadata> importBeanDefinitionRegistrars =
 			new LinkedHashMap<>();
 

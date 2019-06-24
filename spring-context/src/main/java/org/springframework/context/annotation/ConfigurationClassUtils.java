@@ -70,6 +70,7 @@ abstract class ConfigurationClassUtils {
 
 
 	/**
+	 * 判断是不是加了@Configuration注解的类,如果是则给当前类设置full属性,不是就设置成lite属性
 	 * Check whether the given bean definition is a candidate for a configuration class
 	 * (or a nested component class declared within a configuration/component class,
 	 * to be auto-registered as well), and mark it accordingly.
@@ -95,7 +96,7 @@ abstract class ConfigurationClassUtils {
 		if (beanDef instanceof AnnotatedBeanDefinition &&
 				className.equals(((AnnotatedBeanDefinition) beanDef).getMetadata().getClassName())) {
 			// Can reuse the pre-parsed metadata from the given BeanDefinition...
-			metadata = ((AnnotatedBeanDefinition) beanDef).getMetadata();//对于注解bean,元数据中最关心的就是注解
+			metadata = ((AnnotatedBeanDefinition) beanDef).getMetadata();//对于注解bean,元数据中最关心的就是注解:Annotation[]
 		}
 		/**
 		 * 如果BeanDefinition是AbstractBeanDefinition的实例(注意RootBeanDefinition是AbstractBeanDefinition的子类)
@@ -106,7 +107,7 @@ abstract class ConfigurationClassUtils {
 			// Check already loaded Class if present...
 			// since we possibly can't even load the class file for this Class.
 			Class<?> beanClass = ((AbstractBeanDefinition) beanDef).getBeanClass();
-			//如果是RootBeanDefinition几乎没有元数据,可以忽略
+			//如果是RootBeanDefinition几乎没有元数据,可以忽略:Annotation[]
 			metadata = new StandardAnnotationMetadata(beanClass, true);
 		}
 		else {
@@ -122,12 +123,12 @@ abstract class ConfigurationClassUtils {
 				return false;
 			}
 		}
-		//判断当前这个beandefinition中存在的类是否加了@Configuration注解
+		//判断当前这个beandefinition中存在的类是否加了@Configuration注解,是就给这个类设置一个full属性表示这是一个配置类
 		if (isFullConfigurationCandidate(metadata)) {
 			//如果是则为beandefinition设置ConfigurationClass属性为full
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}
-
+		//通过@Component、@Import、@Bean注解注册进来的bean,是就给这个类设置一个full属性表示这是一个非配置类
 		else if (isLiteConfigurationCandidate(metadata)) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_LITE);
 		}
@@ -136,6 +137,7 @@ abstract class ConfigurationClassUtils {
 		}
 
 		// It's a full or lite configuration candidate... Let's determine the order value, if any.
+		//加了@Configuration、@Component、@Import、@Bean注解的类是否设置了排序
 		Integer order = getOrder(metadata);
 		if (order != null) {
 			beanDef.setAttribute(ORDER_ATTRIBUTE, order);
@@ -156,6 +158,7 @@ abstract class ConfigurationClassUtils {
 	}
 
 	/**
+	 * 加了@Configuration注解的类
 	 * Check the given metadata for a full configuration class candidate
 	 * (i.e. a class annotated with {@code @Configuration}).
 	 * @param metadata the metadata of the annotated class
@@ -167,6 +170,7 @@ abstract class ConfigurationClassUtils {
 	}
 
 	/**
+	 * 通过@Component、@Import、@Bean注解注册进来的类
 	 * Check the given metadata for a lite configuration class candidate
 	 * (e.g. a class annotated with {@code @Component} or just having
 	 * {@code @Import} declarations or {@code @Bean methods}).

@@ -238,8 +238,10 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			// Simply call processConfigurationClasses lazily at this point then.
 			processConfigBeanDefinitions((BeanDefinitionRegistry) beanFactory);
 		}
-
+		//给加了@Confiruation注解的类产生cglib代理
+		//为什么需要产生cglib代理:维护@Bean注解产生的对象的作用域
 		enhanceConfigurationClasses(beanFactory);
+		//
 		beanFactory.addBeanPostProcessor(new ImportAwareBeanPostProcessor(beanFactory));
 	}
 
@@ -248,23 +250,23 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 	 * {@link Configuration} classes.
 	 */
 	public void processConfigBeanDefinitions(BeanDefinitionRegistry registry) {
-		//拿到beanDefinitionMap中是Configuration类的beanDefinition,
-		// 并将其beanname和beanDefinition封装成BeanDefinitionHolder暂存放到集合中,
-		// 然后根据这个集合中是否有元素判断是否有Config类
+		//拿到beanDefinitionMap中所有加了@Configuration或者通过@Component、@Bean、@Import注入进来的类的beanDefinition,
+		// 并将其beanname和beanDefinition封装成BeanDefinitionHolder暂存放到集合中
 		List<BeanDefinitionHolder> configCandidates = new ArrayList<>();
 		//获取beanfactory的beanDefinitionMap中的所有注册的beandefinition的key
 		String[] candidateNames = registry.getBeanDefinitionNames();
-		//开始解析AppConfig类中的注解:需要循环,因为ac.register(...)可能注册多个Config类
+		//遍历所有注册到bean工厂中的beandefinition的beanname
 		for (String beanName : candidateNames) {
+			//根据beanname拿到beandefinition
 			BeanDefinition beanDef = registry.getBeanDefinition(beanName);
 			//如果BeanDefinition中的ConfigurationClass属性为full或者lite则意味着已经处理过了,直接跳过
-			if (ConfigurationClassUtils.isFullConfigurationClass(beanDef) ||
-					ConfigurationClassUtils.isLiteConfigurationClass(beanDef)) {
+			if (ConfigurationClassUtils.isFullConfigurationClass(beanDef) ||//是配置类
+					ConfigurationClassUtils.isLiteConfigurationClass(beanDef)) {//普通类
 				if (logger.isDebugEnabled()) {
 					logger.debug("Bean definition has already been processed as a configuration class: " + beanDef);
 				}
 			}
-			//判断是否是Configuration类(是否加了@Configuration注解,比如AppConfig),这里其实主要是看是否加了@Configuration注解
+			//判断是否是配置类(是否加了@Configuration注解,比如AppConfig),这里其实主要是看是否加了@Configuration注解
 			else if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDef, this.metadataReaderFactory)) {
 				configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
 			}
@@ -313,10 +315,10 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
 		//实例化2个set,candidates用于将之前加入的configCandidates进行去重,因为可能有多个配置类重复了
 		Set<BeanDefinitionHolder> candidates = new LinkedHashSet<>(configCandidates);
-		//判断是否处理过
+		//存储处理过的配置类
 		Set<ConfigurationClass> alreadyParsed = new HashSet<>(configCandidates.size());
 		do {
-			//解析
+			//解析候选的配置类(需要注意:可能是加了@Configuration注解的类,也可能没加)
 			parser.parse(candidates);
 			parser.validate();
 
@@ -329,6 +331,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 						registry, this.sourceExtractor, this.resourceLoader, this.environment,
 						this.importBeanNameGenerator, parser.getImportRegistry());
 			}
+			//把扫描出来的bean对应的BeanDefinitions添加到factory的beanDefinitionMap中
 			this.reader.loadBeanDefinitions(configClasses);
 			alreadyParsed.addAll(configClasses);
 
@@ -376,6 +379,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		Map<String, AbstractBeanDefinition> configBeanDefs = new LinkedHashMap<>();
 		for (String beanName : beanFactory.getBeanDefinitionNames()) {
 			BeanDefinition beanDef = beanFactory.getBeanDefinition(beanName);
+			//判断是否是一个全注解类:full?lite?
 			if (ConfigurationClassUtils.isFullConfigurationClass(beanDef)) {
 				if (!(beanDef instanceof AbstractBeanDefinition)) {
 					throw new BeanDefinitionStoreException("Cannot enhance @Configuration bean definition '" +
@@ -404,6 +408,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 				// Set enhanced subclass of the user-specified bean class
 				Class<?> configClass = beanDef.resolveBeanClass(this.beanClassLoader);
 				if (configClass != null) {
+					//完成对全注解类的cglib代理
 					Class<?> enhancedClass = enhancer.enhance(configClass, this.beanClassLoader);
 					if (configClass != enhancedClass) {
 						if (logger.isTraceEnabled()) {

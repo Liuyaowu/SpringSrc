@@ -23,7 +23,8 @@ import org.springframework.beans.BeansException;
  * 实现该接口可以在spring的bean创建之前修改bean定义的属性
  * spring允许BeanFactoryPostProcessor在容器实例化任何其它bean之前读取配置元数据,
  * 并可以根据需要进行修改,例如可以把bean的scope从singleton修改为prototype,
- * 也可以把property的值进行修改.还可以同时配置多个BeanFactoryPostProcessor,并通过设置"order"属性来控制BeanFactoryPostProcessor执行顺序
+ * 也可以把property的值进行修改.还可以同时配置多个BeanFactoryPostProcessor,
+ * 并通过设置"order"属性来控制BeanFactoryPostProcessor执行顺序
  * BeanFactoryPostProcessor是在spring容器加载了bean的定义文件之后,在bean实例化之前执行的
  *
  * Allows for custom modification of an application context's bean definitions,
@@ -53,6 +54,9 @@ import org.springframework.beans.BeansException;
 public interface BeanFactoryPostProcessor {
 
 	/**
+	 * 在BeanFactory初始化之后调用,来定制和修改BeanFactory的内容;
+	 * 所有的bean定义已经保存加载到beanFactory，但是bean的实例还未创建
+	 *
 	 * Modify the application context's internal bean factory after its standard
 	 * initialization. All bean definitions will have been loaded, but no beans
 	 * will have been instantiated yet. This allows for overriding or adding
