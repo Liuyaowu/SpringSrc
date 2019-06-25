@@ -6,6 +6,7 @@ import com.mobei.dao.BeanDao1;
 import com.mobei.dao.BeanDao2;
 import com.mobei.dao.ImportDao;
 import com.mobei.importbeandefinitionregistrar.MyImportBeanDefinitionRegistrar;
+import com.mobei.importselector.MyDefferedSelector;
 import com.mobei.importselector.MySelector;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -18,7 +19,7 @@ import org.springframework.context.annotation.Import;
 //@Import(MyImportBeanDefinitionRegistrar.class)
 //@Import(AppConfig2.class)
 //@MyEnableProxy
-@Import({ImportDao.class, MySelector.class, MyImportBeanDefinitionRegistrar.class})
+@Import({ImportDao.class, MySelector.class, MyImportBeanDefinitionRegistrar.class, MyDefferedSelector.class})
 //@Order
 public class AppConfig {
 

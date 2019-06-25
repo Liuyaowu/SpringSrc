@@ -128,14 +128,13 @@ abstract class ConfigurationClassUtils {
 			//如果是则为beandefinition设置ConfigurationClass属性为full
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}
-		//通过@Component、@Import、@Bean注解注册进来的bean,是就给这个类设置一个full属性表示这是一个非配置类
+		//通过@ComponentScan、@Component、@Import、@Bean注解注册进来的bean,是就给这个类设置一个full属性表示这是一个非配置类
 		else if (isLiteConfigurationCandidate(metadata)) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_LITE);
 		}
 		else {
 			return false;
 		}
-
 		// It's a full or lite configuration candidate... Let's determine the order value, if any.
 		//加了@Configuration、@Component、@Import、@Bean注解的类是否设置了排序
 		Integer order = getOrder(metadata);
@@ -170,7 +169,8 @@ abstract class ConfigurationClassUtils {
 	}
 
 	/**
-	 * 通过@Component、@Import、@Bean注解注册进来的类
+	 * 检查类上是否加了Component、ComponentScan、Import、ImportResource这些注解或者类里面的方法带有@Bean注解,
+	 * 如果是返回true,否则返回false
 	 * Check the given metadata for a lite configuration class candidate
 	 * (e.g. a class annotated with {@code @Component} or just having
 	 * {@code @Import} declarations or {@code @Bean methods}).

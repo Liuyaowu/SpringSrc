@@ -234,7 +234,11 @@ class ConfigurationClassParser {
 			sourceClass = doProcessConfigurationClass(configClass, sourceClass);
 		}
 		while (sourceClass != null);
-
+		/**
+		 * 这个地方得到的Class可能是通过@Import导入进来的或者@Component扫描后的类中又有加了@Configuration注解的类的bean
+		 * (没有加@Component注解,所以在这里的前一步骤还没将该bean的bd加载到工厂中,先将描述bean的class保存起来,后面统一加载)
+		 * 需要注意的是:此时configurationClasses中对应的beandefinition可能已经被加载了(比如@Configuration注解的类会在@ComponentScan的时候进行load)
+		 */
 		this.configurationClasses.put(configClass, configClass);
 	}
 
@@ -283,7 +287,7 @@ class ConfigurationClassParser {
 				Set<BeanDefinitionHolder> scannedBeanDefinitions =
 						this.componentScanParser.parse(componentScan, sourceClass.getMetadata().getClassName());
 				// Check the set of scanned definitions for any further config classes and parse recursively if needed
-				//检查扫描出来的类中是否还有加了@Configuration注解的类
+				//检查@ComponentScan扫描出来的类中是否还有加了@Configuration注解的类
 				for (BeanDefinitionHolder holder : scannedBeanDefinitions) {
 					BeanDefinition bdCand = holder.getBeanDefinition().getOriginatingBeanDefinition();
 					if (bdCand == null) {
@@ -600,7 +604,7 @@ class ConfigurationClassParser {
 								BeanUtils.instantiateClass(candidateClass, ImportBeanDefinitionRegistrar.class);
 						ParserStrategyUtils.invokeAwareMethods(//如果实现了Aware接口,处理接口的方法
 								registrar, this.environment, this.resourceLoader, this.registry);
-						configClass.addImportBeanDefinitionRegistrar(registrar, currentSourceClass.getMetadata());//放在了AppConfig(要看情况,好像只要是加了注解的注册到里面的都会)中的一个list集合中
+						configClass.addImportBeanDefinitionRegistrar(registrar, currentSourceClass.getMetadata());//放在了表示Class的AppConfig字节码对象中(要看情况,好像只要是加了注解的注册到里面的都会)中的一个list集合中
 					}
 					//普通类
 					else {

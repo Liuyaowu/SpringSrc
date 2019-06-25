@@ -55,7 +55,7 @@ final class PostProcessorRegistrationDelegate {
 			ConfigurableListableBeanFactory beanFactory, List<BeanFactoryPostProcessor> beanFactoryPostProcessors) {
 
 		// Invoke BeanDefinitionRegistryPostProcessors first, if any.
-		//如果有BeanDefinitionRegistryPostProcessors则需要先处理,那么我们需要拿到bean工厂的beanDefinitionMap,
+		//如果有BeanDefinitionRegistryPostProcessors则需要先处理,那么我们需要拿到beanfactory的beanDefinitionMap,
 		//循环去查找是否有类型相匹配的类,如果找到了存储到这个set中
 		Set<String> processedBeans = new HashSet<>();
 
@@ -74,6 +74,8 @@ final class PostProcessorRegistrationDelegate {
 				if (postProcessor instanceof BeanDefinitionRegistryPostProcessor) {
 					BeanDefinitionRegistryPostProcessor registryProcessor =
 							(BeanDefinitionRegistryPostProcessor) postProcessor;
+					//自定义的BeanDefinitionRegistryPostProcessor(手动注册进来的)的扩展方法在这里执行,
+					// 如果动态添加了beandefinition,那么这里执行完后bdMap中就有了这个类的bd
 					registryProcessor.postProcessBeanDefinitionRegistry(registry);
 					registryProcessors.add(registryProcessor);
 				}
@@ -116,7 +118,7 @@ final class PostProcessorRegistrationDelegate {
 			registryProcessors.addAll(currentRegistryProcessors);
 			//currentRegistryProcessors:ConfigurationClassPostProcessor
 			//registry:DefaultListableBeanFactory
-			//1、先执行currentRegistryProcessors(spring自己创建的):先执行扩展方法(扩展方法在父类方法之前执行)
+			//1、先执行currentRegistryProcessors(spring自己创建的ConfigurationClassPostProcessor):先执行扩展方法(扩展方法在父类方法之前执行),在扩展方法里面处理了@Component和@Import等非常重要的注解
 			invokeBeanDefinitionRegistryPostProcessors(currentRegistryProcessors, registry);
 			//执行完所有的BeanDefinitionRegistryPostProcessor
 			//执行完后后面要复用,需要把内容清空

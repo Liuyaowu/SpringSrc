@@ -202,7 +202,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
 
 	/**
-	 * 手动调用
+	 *
 	 * Derive further bean definitions from the configuration classes in the registry.
 	 */
 	@Override
@@ -321,7 +321,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			//解析候选的配置类(需要注意:可能是加了@Configuration注解的类,也可能没加)
 			parser.parse(candidates);
 			parser.validate();
-
+			//把解析后的类统一拿出来进行解析
 			Set<ConfigurationClass> configClasses = new LinkedHashSet<>(parser.getConfigurationClasses());
 			configClasses.removeAll(alreadyParsed);
 

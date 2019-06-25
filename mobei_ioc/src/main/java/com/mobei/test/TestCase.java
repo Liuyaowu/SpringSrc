@@ -1,12 +1,10 @@
 package com.mobei.test;
 
 import com.mobei.aop.AppConfig;
+import com.mobei.beanfactorypostprocessor.MyBeanDefinitionRegistryPostProcessor;
 import com.mobei.beanfactorypostprocessor.MyBeanFactoryPostProcessor;
-import com.mobei.dao.EnhancerDao;
+import com.mobei.dao.NormalBeanWithBeanAnno;
 import com.mobei.dao.TestDao;
-import com.mobei.methodinterceptor.MyMethodInterceptor;
-import org.springframework.cglib.core.SpringNamingPolicy;
-import org.springframework.cglib.proxy.Enhancer;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 public class TestCase {
@@ -20,7 +18,9 @@ public static void main(String[] args) {
 		//把一个class转成beandefinition,最后put到map(DefaultListableBeanFactory的一个变量:beanDefinitionMap)中
 	ac.register(AppConfig.class);
 	ac.register(TestDao.class);
+	ac.register(NormalBeanWithBeanAnno.class);
 	ac.addBeanFactoryPostProcessor(new MyBeanFactoryPostProcessor());
+	ac.addBeanFactoryPostProcessor(new MyBeanDefinitionRegistryPostProcessor());
 //		ac.registerBean(IndexDao.class);
 		//初始化spring的环境
 		ac.refresh();
@@ -47,11 +47,11 @@ public static void main(String[] args) {
 
 
 	/***************************************************/
-	Enhancer enhancer = new Enhancer();
-	enhancer.setSuperclass(EnhancerDao.class);
-	enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);
-	enhancer.setCallback(new MyMethodInterceptor());
-	enhancer.create();
+//	Enhancer enhancer = new Enhancer();
+//	enhancer.setSuperclass(EnhancerDao.class);
+//	enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);
+//	enhancer.setCallback(new MyMethodInterceptor());
+//	enhancer.create();
 }
 
 }
