@@ -394,6 +394,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 				configBeanDefs.put(beanName, (AbstractBeanDefinition) beanDef);
 			}
 		}
+		//如果不是全注解的类(被@Configuration注解的类)就不进行Cglib代理
 		if (configBeanDefs.isEmpty()) {
 			// nothing to enhance -> return immediately
 			return;
@@ -405,17 +406,18 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			// If a @Configuration class gets proxied, always proxy the target class
 			beanDef.setAttribute(AutoProxyUtils.PRESERVE_TARGET_CLASS_ATTRIBUTE, Boolean.TRUE);
 			try {
-				// Set enhanced subclass of the user-specified bean class
+				// Set enhanced subclass of the user-specified bean class:设置用户指定的bean类的增强子类
 				Class<?> configClass = beanDef.resolveBeanClass(this.beanClassLoader);
 				if (configClass != null) {
 					//完成对全注解类的cglib代理
 					Class<?> enhancedClass = enhancer.enhance(configClass, this.beanClassLoader);
+
 					if (configClass != enhancedClass) {
 						if (logger.isTraceEnabled()) {
 							logger.trace(String.format("Replacing bean definition '%s' existing class '%s' with " +
 									"enhanced class '%s'", entry.getKey(), configClass.getName(), enhancedClass.getName()));
 						}
-						beanDef.setBeanClass(enhancedClass);
+						beanDef.setBeanClass(enhancedClass);//设置bean的Class为代理类class
 					}
 				}
 			}

@@ -1,9 +1,7 @@
 package com.mobei.dao;
 
-import org.springframework.context.annotation.Bean;
-
 public class NormalBeanWithBeanAnno {
-	@Bean
+//	@Bean
 	public void test(){
 
 	}

@@ -1,10 +1,6 @@
 package com.mobei.test;
 
 import com.mobei.aop.AppConfig;
-import com.mobei.beanfactorypostprocessor.MyBeanDefinitionRegistryPostProcessor;
-import com.mobei.beanfactorypostprocessor.MyBeanFactoryPostProcessor;
-import com.mobei.dao.NormalBeanWithBeanAnno;
-import com.mobei.dao.TestDao;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 public class TestCase {
@@ -17,13 +13,15 @@ public static void main(String[] args) {
 				new AnnotationConfigApplicationContext();
 		//把一个class转成beandefinition,最后put到map(DefaultListableBeanFactory的一个变量:beanDefinitionMap)中
 	ac.register(AppConfig.class);
-	ac.register(TestDao.class);
-	ac.register(NormalBeanWithBeanAnno.class);
-	ac.addBeanFactoryPostProcessor(new MyBeanFactoryPostProcessor());
-	ac.addBeanFactoryPostProcessor(new MyBeanDefinitionRegistryPostProcessor());
+//	ac.register(TestDao.class);
+//	ac.register(NormalBeanWithBeanAnno.class);
+//	ac.addBeanFactoryPostProcessor(new MyBeanFactoryPostProcessor());
+//	ac.addBeanFactoryPostProcessor(new MyBeanDefinitionRegistryPostProcessor());
 //		ac.registerBean(IndexDao.class);
 		//初始化spring的环境
 		ac.refresh();
+	System.out.println(ac.getBean("beanDao1"));
+	System.out.println(ac.getBean("beanDao2"));
 
 //	MyRegistrarDao myRegistrarDao = (MyRegistrarDao) ac.getBean("myRegistrarDao");
 //	MyRegistrarDao myRegistrarDao = ac.getBean(MyRegistrarDao.class);
@@ -51,7 +49,8 @@ public static void main(String[] args) {
 //	enhancer.setSuperclass(EnhancerDao.class);
 //	enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);
 //	enhancer.setCallback(new MyMethodInterceptor());
-//	enhancer.create();
+//	EnhancerDao enhancerDao = (EnhancerDao) enhancer.create();
+//	enhancerDao.test();
 }
 
 }

@@ -42,6 +42,7 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -87,7 +88,7 @@ class ConfigurationClassEnhancer {
 	/**
 	 * Loads the specified class and generates a CGLIB subclass of it equipped with
 	 * container-aware callbacks capable of respecting scoping and other bean semantics.
-	 * @return the enhanced subclass
+	 * @return the enhanced subclass:增强的子类
 	 */
 	public Class<?> enhance(Class<?> configClass, @Nullable ClassLoader classLoader) {
 		//判断是否被代理过
@@ -102,8 +103,14 @@ class ConfigurationClassEnhancer {
 			}
 			return configClass;
 		}
-		//如果没有被代理cglib代理
+		//如果没有被代理cglib代理,使用cglib完成对目标类的代理
 		Class<?> enhancedClass = createClass(newEnhancer(configClass, classLoader));
+
+		try {
+			System.in.read();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		if (logger.isTraceEnabled()) {
 			logger.trace(String.format("Successfully enhanced %s; enhanced class name is: %s",
 					configClass.getName(), enhancedClass.getName()));
@@ -112,6 +119,7 @@ class ConfigurationClassEnhancer {
 	}
 
 	/**
+	 * 创建一个CGLIB的Enhacer实例
 	 * Creates a new CGLIB {@link Enhancer} instance.
 	 */
 	private Enhancer newEnhancer(Class<?> configSuperClass, @Nullable ClassLoader classLoader) {
@@ -119,6 +127,7 @@ class ConfigurationClassEnhancer {
 		//增强父类(cglib基于继承)
 		enhancer.setSuperclass(configSuperClass);
 		//增强接口:便于判断,表示一个类已经被增强了
+		//EnhancedConfiguration#setBeanFactory(BeanFactory beanFactory)
 		enhancer.setInterfaces(new Class<?>[] {EnhancedConfiguration.class});
 		enhancer.setUseFactory(false);
 		enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);
@@ -136,7 +145,7 @@ class ConfigurationClassEnhancer {
 		return enhancer;
 	}
 
-	/**
+	/**使用cglib生成代理类,确保为新子类注册回调
 	 * Uses enhancer to generate a subclass of superclass,
 	 * ensuring that callbacks are registered for the new subclass.
 	 */
@@ -228,6 +237,7 @@ class ConfigurationClassEnhancer {
 			ClassEmitterTransformer transformer = new ClassEmitterTransformer() {
 				@Override
 				public void end_class() {
+					//声明一个BeanFactory类型的字段(代理以后如果要获取对象需要拿到该字段从factory中去判断是否目标对象已经存在了):$$beanFactory
 					declare_field(Constants.ACC_PUBLIC, BEAN_FACTORY_FIELD, Type.getType(BeanFactory.class), null);
 					super.end_class();
 				}
@@ -342,6 +352,7 @@ class ConfigurationClassEnhancer {
 			// proxy that intercepts calls to getObject() and returns any cached bean instance.
 			// This ensures that the semantics of calling a FactoryBean from within @Bean methods
 			// is the same as that of referring to a FactoryBean within XML. See SPR-6602.
+			//判断方法返回的是不是factorybean对象,如果是需要对factorybean创建代理
 			if (factoryContainsBean(beanFactory, BeanFactory.FACTORY_BEAN_PREFIX + beanName) &&
 					factoryContainsBean(beanFactory, beanName)) {
 				Object factoryBean = beanFactory.getBean(BeanFactory.FACTORY_BEAN_PREFIX + beanName);

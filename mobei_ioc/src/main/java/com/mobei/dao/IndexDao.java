@@ -1,10 +1,8 @@
 package com.mobei.dao;
 
-import org.springframework.stereotype.Repository;
-
 import javax.annotation.PostConstruct;
 
-@Repository
+//@Repository
 public class IndexDao {
 	public IndexDao() {
 		System.out.println("构造函数");

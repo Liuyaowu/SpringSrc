@@ -139,7 +139,7 @@ final class PostProcessorRegistrationDelegate {
 			currentRegistryProcessors.clear();
 
 			// Finally, invoke all other BeanDefinitionRegistryPostProcessors until no further ones appear.
-			//
+			//处理自定义的BeanDefinitionRegistryPostProcessor的postProcessBeanDefinitionRegistry方法
 			boolean reiterate = true;
 			while (reiterate) {
 				reiterate = false;
