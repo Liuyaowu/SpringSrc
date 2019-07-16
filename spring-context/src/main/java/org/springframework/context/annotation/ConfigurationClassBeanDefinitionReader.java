@@ -127,6 +127,7 @@ class ConfigurationClassBeanDefinitionReader {
 		if (configClass.isImported()) {
 			registerBeanDefinitionForImportedConfigurationClass(configClass);
 		}
+		//加了@Bean注解的方法
 		for (BeanMethod beanMethod : configClass.getBeanMethods()) {
 			loadBeanDefinitionsForBeanMethod(beanMethod);
 		}
@@ -206,10 +207,13 @@ class ConfigurationClassBeanDefinitionReader {
 
 		if (metadata.isStatic()) {
 			// static @Bean method
+			//静态方法:设置的是BeanClass的名字
 			beanDef.setBeanClassName(configClass.getMetadata().getClassName());
+			//此时创建bean的方式类似于xml方式中使用factory-method静态工厂方式创建bean
 			beanDef.setFactoryMethodName(methodName);
 		}
 		else {
+			//实例方法:设置的是FactoryBean的名字
 			// instance @Bean method
 			beanDef.setFactoryBeanName(configClass.getBeanName());
 			beanDef.setUniqueFactoryMethodName(methodName);

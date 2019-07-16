@@ -42,7 +42,6 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -106,11 +105,11 @@ class ConfigurationClassEnhancer {
 		//如果没有被代理cglib代理,使用cglib完成对目标类的代理
 		Class<?> enhancedClass = createClass(newEnhancer(configClass, classLoader));
 
-		try {
-			System.in.read();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+//		try {
+//			System.in.read();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
 		if (logger.isTraceEnabled()) {
 			logger.trace(String.format("Successfully enhanced %s; enhanced class name is: %s",
 					configClass.getName(), enhancedClass.getName()));
@@ -335,6 +334,7 @@ class ConfigurationClassEnhancer {
 			//enhancedConfigInstance 代理
 			//通过enhancedConfigInstance中cglib生成的成员变量$$beanFactory获得beanFactory
 			ConfigurableBeanFactory beanFactory = getBeanFactory(enhancedConfigInstance);
+			//如果没有设置beanname就以方法名作为beanname方法名
 			String beanName = BeanAnnotationHelper.determineBeanNameFor(beanMethod);
 
 			// Determine whether this bean is a scoped-proxy
@@ -361,11 +361,12 @@ class ConfigurationClassEnhancer {
 				}
 				else {
 					// It is a candidate FactoryBean - go ahead with enhancement
+					//它是候选FactoryBean  - 继续进行增强
 					return enhanceFactoryBean(factoryBean, beanMethod.getReturnType(), beanFactory, beanName);
 				}
 			}
 
-			//判断执行的方法和调用方法是不是同一个
+			//判断执行的方法和调用方法是不是同一个:是同一个代表是第一次调用
 			if (isCurrentlyInvokedFactoryMethod(beanMethod)) {
 				// The factory is calling the bean method in order to instantiate and register the bean
 				// (i.e. via a getBean() call) -> invoke the super implementation of the method to actually
@@ -556,7 +557,7 @@ class ConfigurationClassEnhancer {
 
 		private Object createCglibProxyForFactoryBean(final Object factoryBean,
 				final ConfigurableBeanFactory beanFactory, final String beanName) {
-
+			//对factorybean中的bean继续进行
 			Enhancer enhancer = new Enhancer();
 			enhancer.setSuperclass(factoryBean.getClass());
 			enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);

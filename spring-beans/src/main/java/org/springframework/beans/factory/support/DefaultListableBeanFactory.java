@@ -367,6 +367,10 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 	@Nullable
 	private <T> T resolveBean(ResolvableType requiredType, @Nullable Object[] args, boolean nonUniqueAsNull) {
+		/**
+		 * NamedBeanHolder:可以理解为一个和map差不多的数据结构,里面就是存了bean的名字和bean的实例.
+		 * 通过resolveNamedBean方法得到这个holder,孤儿需要看这个resolveNamedBean是如何得到这个holder的
+		 */
 		NamedBeanHolder<T> namedBean = resolveNamedBean(requiredType, args, nonUniqueAsNull);
 		if (namedBean != null) {
 			return namedBean.getBeanInstance();
@@ -767,7 +771,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 	protected boolean isBeanEligibleForMetadataCaching(String beanName) {
 		return (this.configurationFrozen || super.isBeanEligibleForMetadataCaching(beanName));
 	}
-
+	//单例实例化之前do sth
 	@Override
 	public void preInstantiateSingletons() throws BeansException {
 		if (logger.isTraceEnabled()) {
@@ -776,13 +780,17 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 
 		// Iterate over a copy to allow for init methods which in turn register new bean definitions.
 		// While this may not be part of the regular factory bootstrap, it does otherwise work fine.
+		//所有bean的名字
 		List<String> beanNames = new ArrayList<>(this.beanDefinitionNames);
 
 		// Trigger initialization of all non-lazy singleton beans...
+		//触发所有非延迟加载单例beans的初始化,主要步骤为调用getBean
 		for (String beanName : beanNames) {
+			//如果xml中配置了父类就合并父BeanDefinition(非重点,使用注解就可以忽略),否则把自身bd拿出来:
+			// 在xml形式中bean标签可以通过parent属性设置父类,所以如果不是使用xml配置就可以忽略
 			RootBeanDefinition bd = getMergedLocalBeanDefinition(beanName);
 			if (!bd.isAbstract() && bd.isSingleton() && !bd.isLazyInit()) {
-				if (isFactoryBean(beanName)) {
+				if (isFactoryBean(beanName)) {//是FactoryBean则加上&
 					Object bean = getBean(FACTORY_BEAN_PREFIX + beanName);
 					if (bean instanceof FactoryBean) {
 						final FactoryBean<?> factory = (FactoryBean<?>) bean;
@@ -801,7 +809,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 						}
 					}
 				}
-				else {
+				else {//普通Bean
 					getBean(beanName);
 				}
 			}
@@ -1068,6 +1076,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		Assert.notNull(requiredType, "Required type must not be null");
 		String[] candidateNames = getBeanNamesForType(requiredType);
 
+		//得到对象的名字,因为对象可能有别名故而需要处理别名
 		if (candidateNames.length > 1) {
 			List<String> autowireCandidates = new ArrayList<>(candidateNames.length);
 			for (String beanName : candidateNames) {

@@ -1,6 +1,7 @@
 package com.mobei.test;
 
 import com.mobei.aop.AppConfig;
+import com.mobei.bean.TestConstructorBean;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 public class TestCase {
@@ -20,8 +21,9 @@ public static void main(String[] args) {
 //		ac.registerBean(IndexDao.class);
 		//初始化spring的环境
 		ac.refresh();
-	System.out.println(ac.getBean("beanDao1"));
-	System.out.println(ac.getBean("beanDao2"));
+		ac.getBean(TestConstructorBean.class).query();
+//	System.out.println(ac.getBean("beanDao1"));
+//	System.out.println(ac.getBean("beanDao2"));
 
 //	MyRegistrarDao myRegistrarDao = (MyRegistrarDao) ac.getBean("myRegistrarDao");
 //	MyRegistrarDao myRegistrarDao = ac.getBean(MyRegistrarDao.class);
@@ -51,6 +53,14 @@ public static void main(String[] args) {
 //	enhancer.setCallback(new MyMethodInterceptor());
 //	EnhancerDao enhancerDao = (EnhancerDao) enhancer.create();
 //	enhancerDao.test();
+
+	/**************test getMergedLocalBeanDefinition method***********************/
+//	System.out.println(((ParentBean)ac.getBean("parent")).getName());
+//	System.out.println(((ParentBean)ac.getBean("child")).getName());
+
+
 }
+
+
 
 }

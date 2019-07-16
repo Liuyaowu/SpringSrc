@@ -3,7 +3,7 @@ package com.mobei.dao;
 import javax.annotation.PostConstruct;
 
 //@Repository
-public class IndexDao {
+public class IndexDao implements Dao {
 	public IndexDao() {
 		System.out.println("构造函数");
 	}

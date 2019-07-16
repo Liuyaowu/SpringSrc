@@ -331,11 +331,17 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 						registry, this.sourceExtractor, this.resourceLoader, this.environment,
 						this.importBeanNameGenerator, parser.getImportRegistry());
 			}
+			/**
+			 * 注意:这里扫描出来的bean当中可能包含了特殊类,比如ImportBeanDefinitionRegistrar也在该方法中处理,
+			 * 但并不是包含在configClasses当中,configClasses中主要包含的是importSelector,
+			 * 因为ImportBeanDefinitionRegistrar在扫描出来的时候已经被添加到一个list当中去了
+			 */
 			//把扫描出来的bean对应的BeanDefinitions添加到factory的beanDefinitionMap中
 			this.reader.loadBeanDefinitions(configClasses);
 			alreadyParsed.addAll(configClasses);
 
 			candidates.clear();
+			//把扫描出来的bd注册给了factory
 			if (registry.getBeanDefinitionCount() > candidateNames.length) {
 				String[] newCandidateNames = registry.getBeanDefinitionNames();
 				Set<String> oldCandidateNames = new HashSet<>(Arrays.asList(candidateNames));
@@ -446,8 +452,18 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			return pvs;
 		}
 
+		/**
+		 * 初始化之前do sth
+		 * @param bean
+		 * @param beanName
+		 * @return
+		 */
 		@Override
 		public Object postProcessBeforeInitialization(Object bean, String beanName) {
+			/**
+			 * 参考@EnableRedisHttpSession注解导入的RedistHttoSessionConfiguration类,
+			 * 这个类实现了ImportAware(使用参考自己写的简书博客:"源码第6个模块")
+			 */
 			if (bean instanceof ImportAware) {
 				ImportRegistry ir = this.beanFactory.getBean(IMPORT_REGISTRY_BEAN_NAME, ImportRegistry.class);
 				AnnotationMetadata importingClass = ir.getImportingClassFor(bean.getClass().getSuperclass().getName());

@@ -76,6 +76,7 @@ public interface BeanWrapper extends ConfigurablePropertyAccessor {
 	 * (as determined by standard JavaBeans introspection).
 	 * @return the PropertyDescriptors for the wrapped object
 	 */
+	//可以拿到bean的所有set方法
 	PropertyDescriptor[] getPropertyDescriptors();
 
 	/**

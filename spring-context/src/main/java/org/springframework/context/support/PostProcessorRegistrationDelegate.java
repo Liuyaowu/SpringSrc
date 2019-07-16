@@ -48,6 +48,13 @@ final class PostProcessorRegistrationDelegate {
 	 * 其中手动添加的BeanFactoryPostProcessor在工厂一个专门存储这个类型的集合中,
 	 * 它对应的beandefinition并没有在工厂的beandefinitionmap集合中
 	 *
+	 * 1、先调用spring自己提供的ConfigurationClassPostProcessor类中的postProcessBeanDefinitionRegistry方法
+	 * 		将初始化中提供的默认类的bean和register注册进来的bean加载到beanfactory中,然后处理@ComponentScan注解、
+	 * 		再处理@Import注解,然后再处理自定义的BeanDefinitionRegistryPostProcessor的postProcessBeanDefinitionRegistry方法
+	 * 		然后再处理此时扫描到的所有的BeanFactoryPostProcessor(接口或子接口实现的)的postProcessBeanFactory方法
+	 * 2、上面执行BeanFactoryPostProcessor的postProcessBeanFactory方法时会去扫描配置类中是否加了@Configuration注解,
+	 * 		@Bean注解的方法,此时扫描出来的bean就需要继续上面的步骤
+	 *
 	 * @param beanFactory:DefaultListableBeanFactory
 	 * @param beanFactoryPostProcessors:自定义的BeanFactoryPostProcessor:自己写的并且没有交给spring去管理的(没有加@Component注解的)
 	 */
@@ -169,6 +176,8 @@ final class PostProcessorRegistrationDelegate {
 			invokeBeanFactoryPostProcessors(beanFactoryPostProcessors, beanFactory);
 		}
 
+		//上面的BeanFactoryPostProcessor的postProcessBeanFactory方法执行完后配置类可能存在@Bean方法的注解,
+		// 这些注解注入的bean还需要继续上面的步骤去再处理
 		// Do not initialize FactoryBeans here: We need to leave all regular beans
 		// uninitialized to let the bean factory post-processors apply to them!
 		String[] postProcessorNames =
@@ -218,19 +227,30 @@ final class PostProcessorRegistrationDelegate {
 		beanFactory.clearMetadataCache();
 	}
 
+	/**
+	 * 注册BeanPostProcessor
+	 * @param beanFactory
+	 * @param applicationContext
+	 */
 	public static void registerBeanPostProcessors(
 			ConfigurableListableBeanFactory beanFactory, AbstractApplicationContext applicationContext) {
-
+		//从beanDefinitionMap中得到所有的BeanPostProcessor
 		String[] postProcessorNames = beanFactory.getBeanNamesForType(BeanPostProcessor.class, true, false);
 
 		// Register BeanPostProcessorChecker that logs an info message when
 		// a bean is created during BeanPostProcessor instantiation, i.e. when
 		// a bean is not eligible for getting processed by all BeanPostProcessors.
+		/**
+		 * 注册BeanPostProcessorChecker,这个类用来处理当一个bean没有资格被所有BeanPostProcessors处理时记录一条消息,例如:
+		 * 某个方法需要传递参数并且标记了@Required注解(已过时),如果没有传递值就会报错,如果移除掉该后置处理器就不会报错了.
+		 * 测试参考下面的:internalPostProcessors.remove(2)(具体是1还是2可以debug看BeanPostProcessorChecker在集合中的索引);
+		 */
 		int beanProcessorTargetCount = beanFactory.getBeanPostProcessorCount() + 1 + postProcessorNames.length;
 		beanFactory.addBeanPostProcessor(new BeanPostProcessorChecker(beanFactory, beanProcessorTargetCount));
 
 		// Separate between BeanPostProcessors that implement PriorityOrdered,
 		// Ordered, and the rest.
+		//区分PriorityOrdered、Ordered和其它接口的BeanPostProcessors
 		List<BeanPostProcessor> priorityOrderedPostProcessors = new ArrayList<>();
 		List<BeanPostProcessor> internalPostProcessors = new ArrayList<>();
 		List<String> orderedPostProcessorNames = new ArrayList<>();
@@ -252,6 +272,8 @@ final class PostProcessorRegistrationDelegate {
 		}
 
 		// First, register the BeanPostProcessors that implement PriorityOrdered.
+		//		TODO 测试postProcessors功能
+//		internalPostProcessors.remove(2);
 		sortPostProcessors(priorityOrderedPostProcessors, beanFactory);
 		registerBeanPostProcessors(beanFactory, priorityOrderedPostProcessors);
 
@@ -279,6 +301,8 @@ final class PostProcessorRegistrationDelegate {
 		registerBeanPostProcessors(beanFactory, nonOrderedPostProcessors);
 
 		// Finally, re-register all internal BeanPostProcessors.
+		//		TODO 测试postProcessors功能
+//		internalPostProcessors.remove(2);
 		sortPostProcessors(internalPostProcessors, beanFactory);
 		registerBeanPostProcessors(beanFactory, internalPostProcessors);
 
@@ -339,6 +363,11 @@ final class PostProcessorRegistrationDelegate {
 	 * BeanPostProcessor that logs an info message when a bean is created during
 	 * BeanPostProcessor instantiation, i.e. when a bean is not eligible for
 	 * getting processed by all BeanPostProcessors.
+	 *
+	 * 当Spring的配置中的后置处理器还没有被注册就已经开始了bean的初始化,
+	 * 便会打印出BeanPostProccessorChecker中设定的信息
+	 *
+	 *
 	 */
 	private static final class BeanPostProcessorChecker implements BeanPostProcessor {
 

@@ -2,10 +2,9 @@ package com.mobei.beanpostprocessor;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.core.PriorityOrdered;
 
 //@Component
-public class TestBeanPostProcessor implements BeanPostProcessor, PriorityOrdered {
+public class TestBeanPostProcessor implements BeanPostProcessor/*, PriorityOrdered*/ {
 	@Override
 	public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
 		if (beanName.equals("indexDao")) {
@@ -21,8 +20,8 @@ public class TestBeanPostProcessor implements BeanPostProcessor, PriorityOrdered
 		return bean;
 	}
 
-	@Override
-	public int getOrder() {
-		return 2;
-	}
+//	@Override
+//	public int getOrder() {
+//		return 2;
+//	}
 }
