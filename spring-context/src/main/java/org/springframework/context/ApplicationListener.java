@@ -37,6 +37,8 @@ import java.util.EventListener;
 public interface ApplicationListener<E extends ApplicationEvent> extends EventListener {
 
 	/**
+	 * 当一个事件发送过来的时候,这个方法来触发相应的处理.
+	 * 该接口可以通过指定需要接受的事件来实现
 	 * Handle an application event.
 	 * @param event the event to respond to
 	 */

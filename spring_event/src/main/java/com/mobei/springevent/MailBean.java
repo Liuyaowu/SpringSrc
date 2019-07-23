@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 public class MailBean {
 
 	@Autowired
-	private ApplicationContext applicationContext;
+	ApplicationContext applicationContext;
 
 	public void sendMail() {
 		applicationContext.publishEvent(new SpringMailEvent(applicationContext));
